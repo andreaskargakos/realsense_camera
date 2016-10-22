@@ -52,6 +52,9 @@
   <build_depend>tf</build_depend>
   <build_depend>roslib</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>libv4l-dev</build_depend>
+  <build_depend>libudev-dev</build_depend>
+
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
@@ -59,7 +62,8 @@
   <run_depend>image_transport</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>camera_info_manager</run_depend>
-
+  <run_depend>libv4l-dev</run_depend>
+  <run_depend>libudev-dev</run_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- You can specify that this package is a metapackage here: -->
