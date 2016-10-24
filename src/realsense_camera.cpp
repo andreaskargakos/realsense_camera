@@ -627,7 +627,7 @@ processRGBD()
 			depth = (float)depth_raw / depth_unit;
 #endif
 
-      //  Why normilize depth - remove it and express depth into mm.
+      //  Why normalize depth - remove it and express depth into mm.
       //  depth_frame_buffer[i] = depth ? 255 * (sensor_depth_max - depth) / sensor_depth_max : 0;
       depth_frame_buffer[i] = depth ? depth : 0;
 
