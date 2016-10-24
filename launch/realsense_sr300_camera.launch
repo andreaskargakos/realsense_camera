@@ -4,8 +4,9 @@
 
     <include file="$(find realsense_camera)/launch/realsense_camera.launch">
         <arg name="realsense_camera_type" value="$(arg realsense_camera_type)" />
-	<arg name="rgb_frame_w" default="640" />
-	<arg name="rgb_frame_h" default="480" />
-        <arg name="depth_unit" default="8" />
+	<arg name="rgb_frame_w" value="640" />
+	<arg name="rgb_frame_h" value="480" />
+        <arg name="depth_unit" value="8" />
+        <arg name="camera" value="sr300" />
     </include>
 </launch>
