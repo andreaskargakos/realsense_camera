@@ -79,7 +79,7 @@ VideoStream     depth_stream;
 std::string		useDeviceSerialNum;
 
 unsigned char *rgb_frame_buffer = NULL;
-unsigned char *depth_frame_buffer = NULL;
+unsigned short *depth_frame_buffer = NULL;
 #ifdef V4L2_PIX_FMT_INZI
 unsigned char *ir_frame_buffer = NULL;
 #endif
@@ -383,10 +383,10 @@ pubRealSenseDepthImageMsg(cv::Mat& depth_mat)
 	depth_img->width = depth_mat.cols;
 	depth_img->height = depth_mat.rows;
 
-	depth_img->encoding = sensor_msgs::image_encodings::MONO8;
+  depth_img->encoding = sensor_msgs::image_encodings::MONO16;
 	depth_img->is_bigendian = 0;
 
-	int step = sizeof(unsigned char) * depth_img->width;
+  int step = sizeof(unsigned short) * depth_img->width;
 	int size = step * depth_img->height;
 	depth_img->step = step;
 	depth_img->data.resize(size);
@@ -557,7 +557,7 @@ processRGBD()
 
     USE_TIMES_START( process_start );
 
-	cv::Mat depth_frame(depth_stream.height, depth_stream.width, CV_8UC1, depth_frame_buffer);
+  cv::Mat depth_frame(depth_stream.height, depth_stream.width, CV_16UC1, depth_frame_buffer);
 
 #ifdef V4L2_PIX_FMT_INZI
 	cv::Mat ir_frame(depth_stream.height, depth_stream.width, CV_8UC1, ir_frame_buffer);
@@ -627,7 +627,9 @@ processRGBD()
 			depth = (float)depth_raw / depth_unit;
 #endif
 
-        depth_frame_buffer[i] = depth ? 255 * (sensor_depth_max - depth) / sensor_depth_max : 0;
+      //  Why normalize depth - remove it and express depth into mm.
+      //  depth_frame_buffer[i] = depth ? 255 * (sensor_depth_max - depth) / sensor_depth_max : 0;
+      depth_frame_buffer[i] = depth ? depth : 0;
 
         float uvx = -1.0f;
         float uvy = -1.0f;
@@ -651,7 +653,8 @@ processRGBD()
 				{
 					int cx = (int)(uvx * rgb_stream.width + 0.5f);
 					int cy = (int)(uvy * rgb_stream.height + 0.5f);
-					if (cx >= 0 && cx < rgb_stream.width && cy >= 0 && cy < rgb_stream.height)
+
+          if (cx >= 0 && cx < rgb_stream.width && cy >= 0 && cy < rgb_stream.height)
 					{
 						unsigned char *rgb = rgb_frame.data + (cx+cy*rgb_stream.width)*3;
 						unsigned char r = rgb[2];
@@ -1039,6 +1042,10 @@ int main(int argc, char* argv[])
 	if (!rgb_camera_info)
 	{
 		rgb_camera_info.reset(new sensor_msgs::CameraInfo());
+    rgb_camera_info->K[0]= 1.0f/depth_fxinv;
+    rgb_camera_info->K[2]= depth_cx;
+    rgb_camera_info->K[4]= 1.0f/depth_fyinv;
+    rgb_camera_info->K[5]= depth_cy;
 		rgb_camera_info->width = rgb_frame_w;
 		rgb_camera_info->height = rgb_frame_h;
 	}
@@ -1061,9 +1068,13 @@ int main(int argc, char* argv[])
 	}
 	if (!ir_camera_info)
 	{
-		ir_camera_info.reset(new sensor_msgs::CameraInfo());
-		ir_camera_info->width = depth_stream.width;
-		ir_camera_info->height = depth_stream.height;
+    ir_camera_info.reset(new sensor_msgs::CameraInfo());
+    ir_camera_info->K[0]= 1.0f/depth_fxinv;
+    ir_camera_info->K[2]= depth_cx;
+    ir_camera_info->K[4]= 1.0f/depth_fyinv;
+    ir_camera_info->K[5]= depth_cy;
+    ir_camera_info->width = depth_stream.width;
+    ir_camera_info->height = rgb_frame_h;
 	}
 
 	if(debug_depth_unit && realsense_camera_type == "Intel(R) RealSense(TM) 3D Camer")
@@ -1082,7 +1093,7 @@ int main(int argc, char* argv[])
 #else
     rgb_frame_buffer = new unsigned char[rgb_stream.width * rgb_stream.height * 2];
 #endif
-    depth_frame_buffer = new unsigned char[depth_stream.width * depth_stream.height];
+    depth_frame_buffer = new unsigned short[depth_stream.width * depth_stream.height];
 
 #ifdef V4L2_PIX_FMT_INZI
     ir_frame_buffer = new unsigned char[depth_stream.width * depth_stream.height];
